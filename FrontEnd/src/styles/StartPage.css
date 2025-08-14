@@ -1,0 +1,48 @@
+.front-page {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(202, 84, 84);
+  }
+  
+  .title p {
+    font-size: 4rem;
+    font-weight: bold;
+    margin-bottom: 2rem;
+    color: #333;
+  }
+  
+  .enter-game {
+    font-size: 2rem;
+    padding: 1rem 2rem;
+    background-color: #428ae8;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .enter-game:hover {
+    background-color: #3212cf;
+  }
+
+  input[type="text"] {
+    font-size: 1.5rem;
+    padding: 0.8rem 1.2rem;
+    margin-bottom: 1.5rem;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    outline: none;
+    width: 80%;
+    max-width: 400px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  input[type="text"]:focus {
+    border-color: #428ae8;
+    box-shadow: 0 0 8px rgba(66, 138, 232, 0.5);
+  }
