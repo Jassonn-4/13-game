@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom"
 import axios from 'axios'
 import { useState } from 'react'
 import '../styles/StartPage.css'
+const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function StartPage() {
     const [playerName, setPlayerName] = useState('');
@@ -10,7 +11,7 @@ export default function StartPage() {
     const navigate = useNavigate();
     const handleJoin = async () => {
         try {
-            const response = await axios.post(`/api/game/join?playerName=${encodeURIComponent(playerName)}`);
+            const response = await axios.post(`${API_BASE}/api/game/join?playerName=${encodeURIComponent(playerName)}`);
             setMessage(response.data);
             navigate("./GameBoard", {
                 state: {
