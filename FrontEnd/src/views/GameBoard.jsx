@@ -1,5 +1,5 @@
 import React from 'react'
-import '../styles/GameBoard.css'
+import '../styles/Gameboard.css'
 import { useLocation } from "react-router-dom"
 import { useState } from 'react'
 import { useCurrentPlay, 
