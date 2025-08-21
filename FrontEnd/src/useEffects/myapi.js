@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from 'react-router-dom'
 import axios from "axios"
+const API_BASE = import.meta.env.VITE_API_URL;
 
 // gets play on the table
 export function useCurrentPlay(setCurrentPlay) {
 useEffect(() => {
     const interval = setInterval(() => {
-    axios.get('/api/game/currentPlay')
+    axios.get(`${API_BASE}/api/game/currentPlay`)
     .then((response) => {
       setCurrentPlay(response.data); // Array of Card Objects
     })
@@ -22,7 +23,7 @@ useEffect(() => {
 export function usePlayerHand(playerIndex, setHand) {
   useEffect(() => {
     const interval = setInterval(() => {
-    axios.get(`/api/game/hand/${playerIndex}`)
+    axios.get(`${API_BASE}/api/game/hand/${playerIndex}`)
     .then((response) => {
       setHand(response.data); // Array of current hand
     })
@@ -38,7 +39,7 @@ export function usePlayerHand(playerIndex, setHand) {
 export function useTurn(setTurn) {
   useEffect(() => {
     const interval = setInterval(() => {
-      axios.get(`/api/game/turn`)
+      axios.get(`${API_BASE}/api/game/turn`)
       .then((response) => {
         setTurn(response.data); // index of current turn
       })
@@ -54,7 +55,7 @@ export function useTurn(setTurn) {
 export function useGameOver(setIsGameOver) {
   useEffect(() => {
     const interval = setInterval(() => {
-      axios.get('/api/game/isOver')
+      axios.get(`${API_BASE}/api/game/isOver`)
       .then((response) => {
         setIsGameOver(response.data);
       })
@@ -75,11 +76,11 @@ export function useOtherPlayers(playerIndex, setLeftHandSize, setRightHandSize, 
     const rightIndex = (playerIndex + 2) % 3;
   
     const interval = setInterval(() => {
-      axios.get(`/api/game/handSize/${leftIndex}`)
+      axios.get(`${API_BASE}/api/game/handSize/${leftIndex}`)
        .then(res => setLeftHandSize(res.data))
        .catch(err => console.error('Failed to get index:', err));
   
-       axios.get(`/api/game/handSize/${rightIndex}`)
+       axios.get(`${API_BASE}/api/game/handSize/${rightIndex}`)
         .then(res => setRightHandSize(res.data))
         .catch(err => console.error('Failed to get index:', err));
     }, 2000);
@@ -91,7 +92,7 @@ export function useOtherPlayers(playerIndex, setLeftHandSize, setRightHandSize, 
 export function useIsGameStarted(setIsGameStarted) {
   useEffect(() => {
     const interval = setInterval(() => {
-      axios.get('/api/game/isStarted')
+      axios.get(`${API_BASE}/api/game/isStarted`)
       .then((response) => {
         setIsGameStarted(response.data);
       })
@@ -108,7 +109,7 @@ export function useHandleLeave(playerIndex, isGameOver, isGameStarted) {
   useEffect(() => {
     const handleLeave = async () => {
       try {
-        await axios.post(`/api/game/leave?playerIndex=${playerIndex}`);
+        await axios.post(`${API_BASE}/api/game/leave?playerIndex=${playerIndex}`);
       } catch (error) {
         console.error('Failed to notify backend of leaving:', error);
       }
@@ -135,9 +136,9 @@ export function useGameEndEvent() {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const response = await axios.get('/api/game/endEvent');
+        const response = await axios.get(`${API_BASE}/api/game/endEvent`);
         if (response.data === true) {
-          await axios.post('/api/game/restart');
+          await axios.post(`${API_BASE}/api/game/restart`);
           navigate('/');
         }
       } catch (error) {

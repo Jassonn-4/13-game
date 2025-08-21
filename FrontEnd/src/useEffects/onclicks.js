@@ -1,8 +1,9 @@
 import axios from 'axios'
+const API_BASE = import.meta.env.VITE_API_URL;
 
 export async function handlePlay(selectedCards, playerIndex, setSelectedCards) {
     try {
-      const response = await axios.post('/api/game/play', selectedCards, {
+      const response = await axios.post(`${API_BASE}/api/game/play`, selectedCards, {
         params: { playerIndex }
       });
   
@@ -19,7 +20,7 @@ export async function handlePlay(selectedCards, playerIndex, setSelectedCards) {
   
   export async function handleRestart(setIsGameOver, navigate) {
     try {
-      await axios.post('/api/game/restart');
+      await axios.post(`${API_BASE}/api/game/restart`);
       setIsGameOver(false);
       navigate('/');
     } catch (error) {
