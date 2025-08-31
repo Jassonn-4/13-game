@@ -12,10 +12,10 @@ public class WebConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/api/**") // allow all /api endpoints
-                        .allowedOrigins("https://13-game.netlify.app") // your Netlify URL
-                        .allowedMethods("GET", "POST", "PUT", "DELETE") // what methods you want to allow
-                        .allowedHeaders("*"); // allow all headers
+                registry.addMapping("/api/**") 
+                        .allowedOrigins("https://13-game.netlify.app") 
+                        .allowedMethods("GET", "POST", "PUT", "DELETE") 
+                        .allowedHeaders("*");
             }
         };
     }
