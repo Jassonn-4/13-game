@@ -22,7 +22,7 @@ import { handlePlay,
 
 export default function GameTable() {
   const location = useLocation();
-  const { playerIndex, playerName } = location.state;
+  const { roomId, playerIndex, playerName } = location.state;
 
   const [currentPlay, setCurrentPlay] = useState([]);
   const [hand, setHand] = useState([]);
@@ -33,15 +33,15 @@ export default function GameTable() {
   const [leftHandSize, setLeftHandSize] = useState(0);
   const [rightHandsize, setRightHandSize] = useState(0);
 
-useIsGameStarted(setIsGameStarted)
-useHandleLeave(playerIndex, isGameOver, isGameStarted);
-useOtherPlayers(playerIndex, setLeftHandSize, setRightHandSize, isGameStarted);
+useIsGameStarted(roomId, setIsGameStarted)
+useHandleLeave(roomId, playerIndex, isGameOver, isGameStarted);
+useOtherPlayers(roomId, playerIndex, setLeftHandSize, setRightHandSize, isGameStarted);
 
-useGameEndEvent();
-useCurrentPlay(setCurrentPlay);
-usePlayerHand(playerIndex, setHand);
-useTurn(setTurn);
-useGameOver(setIsGameOver);
+useGameEndEvent(roomId);
+useCurrentPlay(roomId, setCurrentPlay);
+usePlayerHand(roomId, playerIndex, setHand);
+useTurn(roomId, setTurn);
+useGameOver(roomId, setIsGameOver);
 
     return (
       <div className="table">
@@ -104,7 +104,7 @@ useGameOver(setIsGameOver);
 
         <button
           className="play-button"
-          onClick={() => handlePlay(selectedCards, playerIndex, setSelectedCards)}
+          onClick={() => handlePlay(roomId, selectedCards, playerIndex, setSelectedCards)}
           disabled={turn !== playerIndex}
         >
           Play Selected Cards

@@ -1,10 +1,10 @@
 import axios from 'axios'
 const API_BASE = import.meta.env.VITE_API_URL;
 
-export async function handlePlay(selectedCards, playerIndex, setSelectedCards) {
+export async function handlePlay(roomId, selectedCards, playerIndex, setSelectedCards) {
     try {
       const response = await axios.post(`${API_BASE}/api/game/play`, selectedCards, {
-        params: { playerIndex }
+        params: { roomId, playerIndex }
       });
   
       if (response.data === true) {

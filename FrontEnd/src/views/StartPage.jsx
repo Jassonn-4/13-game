@@ -12,11 +12,14 @@ export default function StartPage() {
     const handleJoin = async () => {
         try {
             const response = await axios.post(`${API_BASE}/api/game/join?playerName=${encodeURIComponent(playerName)}`);
-            setMessage(response.data);
+
+            const { roomId, playerIndex } = response.data;
+            setMessage(`Joined room ${roomId} as player ${playerName}`);
             navigate("./GameBoard", {
                 state: {
+                    roomId,
                     playerName,
-                    playerIndex: response.data
+                    playerIndex,
                 }
             });
         } catch (error) {

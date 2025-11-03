@@ -1,16 +1,16 @@
 package com.jason.backend.controller;
 
-import com.jason.backend.service.GameService;
-import com.jason.backend.model.Card;
-import com.jason.backend.model.Player;
+import com.jason.backend.model.*;
+import com.jason.backend.service.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.MediaType;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -22,34 +22,46 @@ public class GameControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private GameService gameService;
+    private RoomService roomService;
 
     @Test
-    void testJoinGameReturnsIndex() throws Exception {
-    // Mock player addition
-    when(gameService.addPlayer("Jason")).thenReturn(true);
+    void testJoinGameReturnsRoomAndIndex() throws Exception {
+        GameService mockGameService = mock(GameService.class);
+        GameInstance mockInstance = mock(GameInstance.class);
+        GameRoom mockRoom = mock(GameRoom.class);
 
-    // Mock players list
-    List<Player> mockPlayers = List.of(
-        new Player("Alice"),
-        new Player("Bob"),
-        new Player("Jason")  // Jason is index 2
-    );
-    when(gameService.getPlayers()).thenReturn(mockPlayers);
+        when(mockRoom.getGameInstance()).thenReturn(mockInstance);
+        when(mockInstance.getGameService()).thenReturn(mockGameService);
+        when(roomService.assignPlayerToRoom("Jason")).thenReturn(mockRoom);
 
-    mockMvc.perform(post("/api/game/join")
-            .param("playerName", "Jason"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("2")); // Index 2 as string
-}
+        List<Player> players = List.of(
+                new Player("Alice"),
+                new Player("Bob"),
+                new Player("Jason")
+        );
+
+        when(mockGameService.getPlayers()).thenReturn(players);
+        when(mockRoom.getId()).thenReturn("room123");
+
+        mockMvc.perform(post("/api/game/join").param("playerName", "Jason"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roomId").value("room123"))
+                .andExpect(jsonPath("$.playerName").value("Jason"))
+                .andExpect(jsonPath("$.playerIndex").value(2));
+    }
 
     @Test
-    void testGetHand() throws Exception {
-        Player p = new Player("Jason");
-        p.addCard(new Card("Hearts", 12));
-        when(gameService.getPlayerHand(0)).thenReturn(p.getHand());
+    void testGetPlayerHand() throws Exception {
+        String roomId = "room123";
+        int playerIndex = 0;
 
-        mockMvc.perform(get("/api/game/hand/0"))
+        GameService mockGameService = mock(GameService.class);
+        when(roomService.getService(roomId)).thenReturn(mockGameService);
+
+        List<Card> mockHand = List.of(new Card("Hearts", 12));
+        when(mockGameService.getPlayerHand(playerIndex)).thenReturn(mockHand);
+
+        mockMvc.perform(get("/api/game/hand/{roomId}/{playerIndex}", roomId, playerIndex))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].suit").value("Hearts"))
                 .andExpect(jsonPath("$[0].rank").value(12));
@@ -57,68 +69,89 @@ public class GameControllerTest {
 
     @Test
     void testGetCurrentPlay() throws Exception {
-        List<Card> currentPlay = List.of(new Card("Spades", 10));
-        when(gameService.getCurrentPlay()).thenReturn(currentPlay);
+        String roomId = "room123";
+        GameService mockGameService = mock(GameService.class);
+        when(roomService.getService(roomId)).thenReturn(mockGameService);
 
-        mockMvc.perform(get("/api/game/currentPlay"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].suit").value("Spades"))
-            .andExpect(jsonPath("$[0].rank").value(10));
+        List<Card> mockPlay = List.of(new Card("Spades", 10));
+        when(mockGameService.getCurrentPlay()).thenReturn(mockPlay);
+
+        mockMvc.perform(get("/api/game/currentPlay/{roomId}", roomId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].suit").value("Spades"))
+                .andExpect(jsonPath("$[0].rank").value(10));
     }
 
     @Test
     void testGetCurrentPlayerIndex() throws Exception {
-        when(gameService.getCurrentPlayerIndex()).thenReturn(1);
+        String roomId = "room123";
+        GameService mockGameService = mock(GameService.class);
+        when(roomService.getService(roomId)).thenReturn(mockGameService);
+        when(mockGameService.getCurrentPlayerIndex()).thenReturn(1);
 
-        mockMvc.perform(get("/api/game/turn"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("1"));
+        mockMvc.perform(get("/api/game/turn/{roomId}", roomId))
+                .andExpect(status().isOk())
+                .andExpect(content().string("1"));
     }
 
     @Test
     void testPlayCards() throws Exception {
-        List<Card> cardsToPlay = List.of(new Card("Hearts", 7));
-        when(gameService.playCards(eq(0), anyList())).thenReturn(true);
+        String roomId = "room123";
+        int playerIndex = 0;
+        GameService mockGameService = mock(GameService.class);
+        when(roomService.getService(roomId)).thenReturn(mockGameService);
+        when(mockGameService.playCards(eq(playerIndex), anyList())).thenReturn(true);
 
         mockMvc.perform(post("/api/game/play")
-            .param("playerIndex", "0")
-            .contentType("application/json")
-            .content("[{\"suit\":\"Hearts\",\"rank\":7}]"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("true"));
+                .param("roomId", roomId)
+                .param("playerIndex", String.valueOf(playerIndex))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("[{\"suit\":\"Hearts\",\"rank\":7}]"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
     }
 
     @Test
     void testIsGameOver() throws Exception {
-        when(gameService.isGameOver()).thenReturn(false);
+        String roomId = "room123";
+        GameService mockGameService = mock(GameService.class);
+        when(roomService.getService(roomId)).thenReturn(mockGameService);
+        when(mockGameService.isGameOver()).thenReturn(false);
 
-        mockMvc.perform(get("/api/game/isOver"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("false"));
+        mockMvc.perform(get("/api/game/isOver/{roomId}", roomId))
+                .andExpect(status().isOk())
+                .andExpect(content().string("false"));
     }
 
     @Test
     void testRestartGame() throws Exception {
-        doNothing().when(gameService).restartGame();
+        String roomId = "room123";
+        GameService mockGameService = mock(GameService.class);
+        when(roomService.getService(roomId)).thenReturn(mockGameService);
 
-        mockMvc.perform(post("/api/game/restart"))
-            .andExpect(status().isOk());
+        doNothing().when(mockGameService).restartGame();
+        doNothing().when(roomService).removeRoom(roomId);
 
-        verify(gameService, times(1)).restartGame();
+        mockMvc.perform(post("/api/game/restart").param("roomId", roomId))
+                .andExpect(status().isOk());
+
+        verify(mockGameService, times(1)).restartGame();
+        verify(roomService, times(1)).removeRoom(roomId);
     }
 
     @Test
     void testGetHandSize() throws Exception {
+        String roomId = "room123";
         int playerIndex = 0;
-        List<Card> hand = List.of(
-            new Card("hearts", 10),
-            new Card("spades", 11)
-    );
 
-    when(gameService.getPlayerHand(playerIndex)).thenReturn(hand);
+        GameService mockGameService = mock(GameService.class);
+        when(roomService.getService(roomId)).thenReturn(mockGameService);
 
-    mockMvc.perform(get("/api/game/handSize/{playerIndex}", playerIndex))
-        .andExpect(status().isOk())
-        .andExpect(content().string("2"));
-}
+        List<Card> mockHand = List.of(new Card("Hearts", 10), new Card("Spades", 11));
+        when(mockGameService.getPlayerHand(playerIndex)).thenReturn(mockHand);
+
+        mockMvc.perform(get("/api/game/handSize/{roomId}/{playerIndex}", roomId, playerIndex))
+                .andExpect(status().isOk())
+                .andExpect(content().string("2"));
+    }
 }

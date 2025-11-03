@@ -36,7 +36,7 @@ public class GameService {
         return true;
     }
 
-    private void initializeGame() {
+    public void initializeGame() {
         deck.reset();
         deck.shuffle();
         dealCards();
@@ -45,13 +45,15 @@ public class GameService {
 
 // deals each players one card at a time until deck is empty
     private void dealCards() {
-        int playerIndex = 0;
-        while (!deck.getCards().isEmpty()) {
-            Card card = deck.deal(1).get(0);
-            players.get(playerIndex).addCard(card);
-            playerIndex = (playerIndex + 1) % players.size();
+        int cardsPerPlayer = 13;
+        for (int i = 0; i < cardsPerPlayer; i++) {
+            for (Player player : players) {
+                if (!deck.getCards().isEmpty()) {
+                    Card card = deck.deal(1).get(0);
+                    player.addCard(card);
+                }
+            }
         }
-
         players.forEach(Player::sortHand);
     }
 

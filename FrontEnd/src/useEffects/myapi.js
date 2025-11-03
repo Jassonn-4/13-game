@@ -4,10 +4,10 @@ import axios from "axios"
 const API_BASE = import.meta.env.VITE_API_URL;
 
 // gets play on the table
-export function useCurrentPlay(setCurrentPlay) {
+export function useCurrentPlay(roomId, setCurrentPlay) {
 useEffect(() => {
     const interval = setInterval(() => {
-    axios.get(`${API_BASE}/api/game/currentPlay`)
+    axios.get(`${API_BASE}/api/game/currentPlay/${roomId}`)
     .then((response) => {
       setCurrentPlay(response.data); // Array of Card Objects
     })
@@ -16,14 +16,14 @@ useEffect(() => {
     });
   }, 2000);
   return () => clearInterval(interval);
-  }, [setCurrentPlay]);
+  }, [roomId, setCurrentPlay]);
 }
 
 // gets players hand
-export function usePlayerHand(playerIndex, setHand) {
+export function usePlayerHand(roomId, playerIndex, setHand) {
   useEffect(() => {
     const interval = setInterval(() => {
-    axios.get(`${API_BASE}/api/game/hand/${playerIndex}`)
+    axios.get(`${API_BASE}/api/game/hand/${roomId}/${playerIndex}`)
     .then((response) => {
       setHand(response.data); // Array of current hand
     })
@@ -32,14 +32,14 @@ export function usePlayerHand(playerIndex, setHand) {
     });
   }, 2000);
   return () => clearInterval(interval);
-  }, [playerIndex, setHand]);
+  }, [roomId, playerIndex, setHand]);
 }
 
 // gets turn index
-export function useTurn(setTurn) {
+export function useTurn(roomId, setTurn) {
   useEffect(() => {
     const interval = setInterval(() => {
-      axios.get(`${API_BASE}/api/game/turn`)
+      axios.get(`${API_BASE}/api/game/turn/${roomId}`)
       .then((response) => {
         setTurn(response.data); // index of current turn
       })
@@ -48,14 +48,14 @@ export function useTurn(setTurn) {
       });
     }, 2000);
     return () => clearInterval(interval);
-  }, [setTurn]);
+  }, [roomId, setTurn]);
 }
 
 // checks if the game is over
-export function useGameOver(setIsGameOver) {
+export function useGameOver(roomId, setIsGameOver) {
   useEffect(() => {
     const interval = setInterval(() => {
-      axios.get(`${API_BASE}/api/game/isOver`)
+      axios.get(`${API_BASE}/api/game/isOver/${roomId}`)
       .then((response) => {
         setIsGameOver(response.data);
       })
@@ -64,11 +64,11 @@ export function useGameOver(setIsGameOver) {
       });
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [roomId, setIsGameOver]);
 }
 
 // gets other players handsizes
-export function useOtherPlayers(playerIndex, setLeftHandSize, setRightHandSize, isGameStarted) {
+export function useOtherPlayers(roomId, playerIndex, setLeftHandSize, setRightHandSize, isGameStarted) {
   useEffect(() => {
     if (!isGameStarted) return;
 
@@ -76,23 +76,23 @@ export function useOtherPlayers(playerIndex, setLeftHandSize, setRightHandSize, 
     const rightIndex = (playerIndex + 2) % 3;
   
     const interval = setInterval(() => {
-      axios.get(`${API_BASE}/api/game/handSize/${leftIndex}`)
+      axios.get(`${API_BASE}/api/game/handSize/${roomId}/${leftIndex}`)
        .then(res => setLeftHandSize(res.data))
        .catch(err => console.error('Failed to get index:', err));
   
-       axios.get(`${API_BASE}/api/game/handSize/${rightIndex}`)
+       axios.get(`${API_BASE}/api/game/handSize/${roomId}/${rightIndex}`)
         .then(res => setRightHandSize(res.data))
         .catch(err => console.error('Failed to get index:', err));
     }, 2000);
     return () => clearInterval(interval);
-  }, [playerIndex, setLeftHandSize, setRightHandSize, isGameStarted]);
+  }, [roomId, playerIndex, setLeftHandSize, setRightHandSize, isGameStarted]);
 }
 
 // gets if game is started
-export function useIsGameStarted(setIsGameStarted) {
+export function useIsGameStarted(roomId, setIsGameStarted) {
   useEffect(() => {
     const interval = setInterval(() => {
-      axios.get(`${API_BASE}/api/game/isStarted`)
+      axios.get(`${API_BASE}/api/game/isStarted/${roomId}`)
       .then((response) => {
         setIsGameStarted(response.data);
       })
@@ -101,15 +101,15 @@ export function useIsGameStarted(setIsGameStarted) {
       });
     }, 2000);
     return () => clearInterval(interval);
-  }, [setIsGameStarted]);
+  }, [roomId, setIsGameStarted]);
 }
 
 // used to check if a player leaves the game and ends it for everyone
-export function useHandleLeave(playerIndex, isGameOver, isGameStarted) {
+export function useHandleLeave(roomId, playerIndex, isGameOver, isGameStarted) {
   useEffect(() => {
     const handleLeave = async () => {
       try {
-        await axios.post(`${API_BASE}/api/game/leave?playerIndex=${playerIndex}`);
+        await axios.post(`${API_BASE}/api/game/leave?roomId=${roomId}&playerIndex=${playerIndex}`);
       } catch (error) {
         console.error('Failed to notify backend of leaving:', error);
       }
@@ -127,24 +127,28 @@ export function useHandleLeave(playerIndex, isGameOver, isGameStarted) {
       window.removeEventListener('beforeunload', beforeUnload);
       if (isGameStarted && !isGameOver) handleLeave();
     };
-  }, [playerIndex, isGameOver, isGameStarted]);
+  }, [roomId, playerIndex, isGameOver, isGameStarted]);
 }
 
-export function useGameEndEvent() {
+export function useGameEndEvent(roomId) {
   const navigate = useNavigate();
 
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const response = await axios.get(`${API_BASE}/api/game/endEvent`);
+        const response = await axios.get(`${API_BASE}/api/game/endEvent/${roomId}`);
         if (response.data === true) {
-          await axios.post(`${API_BASE}/api/game/restart`);
           navigate('/');
         }
       } catch (error) {
-        console.error('Failed to check gameEvent:', error);
+        if (error.response && error.response.status === 400) {
+          console.warn('Room no longer exists, returning to start.');
+          navigate('/');
+        } else {
+          console.error('Failed to check gameEvent:', error);
+        }
       }
     }, 2000);
     return () => clearInterval(interval);
-  }, [navigate]);
+  }, [roomId, navigate]);
 }

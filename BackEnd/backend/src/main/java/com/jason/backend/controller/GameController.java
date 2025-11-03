@@ -1,95 +1,158 @@
 package com.jason.backend.controller;
 
-import com.jason.backend.model.Player;
-import com.jason.backend.model.Card;
+import com.jason.backend.model.GameInstance;
+import com.jason.backend.model.GameRoom;
 import com.jason.backend.service.GameService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.jason.backend.service.RoomService;
+import com.jason.backend.model.Card;
+import com.jason.backend.model.Player;
+
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/game")
 public class GameController {
-    private final GameService gameService;
+    private final RoomService roomService;
 
     @Autowired
-    public GameController(GameService gameService) {
-        this.gameService = gameService;
+    public GameController(RoomService roomService) {
+        this.roomService = roomService;
     }
 
     @PostMapping("/join")
     public ResponseEntity<?> joinGame(@RequestParam String playerName) {
-    boolean joined = gameService.addPlayer(playerName);
-    if (!joined) {
-        return ResponseEntity.badRequest().body("Game is already started or full. Cannot join.");
-    }
+        // assign player and get corresponding gameroom
+        GameRoom room = roomService.assignPlayerToRoom(playerName);
 
-    List<Player> players = gameService.getPlayers();
-    int index = -1;
-    for (int i = 0; i < players.size(); i++) {
-        if (players.get(i).getName().equals(playerName)) {
-            index = i;
-            break;
+        // gets game service
+        GameService gameService = room.getGameInstance().getGameService();
+
+        // find player index in the game
+        List<Player> players = gameService.getPlayers();
+        int playerIndex = -1;
+        for (int i = 0; i < players.size(); i++) {
+            if (players.get(i).getName().equals(playerName)) {
+                playerIndex = i;
+                break;
+            }
         }
+
+        if (playerIndex == -1) {
+            return ResponseEntity.badRequest().body("Failed to assign player to room");
+        }
+
+        //respond with relevant info
+        Map<String, Object> response = new HashMap<>();
+        response.put("roomId", room.getId());
+        response.put("playerName", playerName);
+        response.put("playerIndex", playerIndex);
+
+        return ResponseEntity.ok(response);
     }
 
-        return ResponseEntity.ok(index);
+    @GetMapping("/hand/{roomId}/{playerIndex}")
+    public ResponseEntity<?> getPlayerHand(@PathVariable String roomId, @PathVariable int playerIndex) {
+        GameService gameService = roomService.getService(roomId);
+        if (gameService == null) {
+            return ResponseEntity.badRequest().body("instance does not exist");
+        }
+        return ResponseEntity.ok(gameService.getPlayerHand(playerIndex));
     }
 
-    @GetMapping("/hand/{playerIndex}")
-    public List<Card> getPlayerHand(@PathVariable int playerIndex) {
-        return gameService.getPlayerHand(playerIndex);
+    @GetMapping("/currentPlay/{roomId}")
+    public ResponseEntity<?> getCurrentPlay(@PathVariable String roomId) {
+        GameService gameService = roomService.getService(roomId);
+        if (gameService == null) {
+            return ResponseEntity.badRequest().body("instance does not exist");
+        }
+        return ResponseEntity.ok(gameService.getCurrentPlay());
     }
 
-    @GetMapping("/currentPlay")
-    public List<Card> getCurrentPlay() {
-        return gameService.getCurrentPlay();
-    }
-
-    @GetMapping("/turn")
-    public int getCurrentPlayerIndex() {
-        return gameService.getCurrentPlayerIndex();
+    @GetMapping("/turn/{roomId}")
+    public ResponseEntity<?> getCurrentPlayerIndex(@PathVariable String roomId) {
+        GameService gameService = roomService.getService(roomId);
+        if (gameService == null) {
+            return ResponseEntity.badRequest().body("instance does not exist");
+        }
+        return ResponseEntity.ok(gameService.getCurrentPlayerIndex());
     }
 
     @PostMapping("/play")
-    public boolean playCards(@RequestParam int playerIndex, @RequestBody List<Card> cards) {
-        return gameService.playCards(playerIndex, cards);
+    public ResponseEntity<?> playCards(@RequestParam String roomId, @RequestParam int playerIndex, @RequestBody List<Card> cards) {
+        GameService gameService = roomService.getService(roomId);
+        if (gameService == null) {
+            return ResponseEntity.badRequest().body("instance does not exist");
+        }
+        boolean success = gameService.playCards(playerIndex, cards);
+        return ResponseEntity.ok(success);
     }
 
-    @GetMapping("/isOver")
-    public boolean isGameOver() {
-        return gameService.isGameOver();
+    @GetMapping("/isOver/{roomId}")
+    public ResponseEntity<?> isGameOver(@PathVariable String roomId) {
+        GameService gameService = roomService.getService(roomId);
+        if (gameService == null) {
+            return ResponseEntity.badRequest().body("instance does not exist");
+        }
+        boolean success = gameService.isGameOver();
+        return ResponseEntity.ok(success);
     }
 
-    @GetMapping("/isStarted")
-    public boolean isGameStarted() {
-        return gameService.isStarted();
+    @GetMapping("/isStarted/{roomId}")
+    public ResponseEntity<?> isGameStarted(@PathVariable String roomId) {
+        GameService gameService = roomService.getService(roomId);
+        if (gameService == null) {
+            return ResponseEntity.badRequest().body("instance does not exist");
+        }
+        boolean success = gameService.isStarted();
+        return ResponseEntity.ok(success);
     }
 
-    @GetMapping("/endEvent") 
-    public boolean getGameEndEventStatus() {
+    @GetMapping("/endEvent/{roomId}") 
+    public ResponseEntity<?> getGameEndEventStatus(@PathVariable String roomId) {
+        GameService gameService = roomService.getService(roomId);
+        if (gameService == null) {
+            return ResponseEntity.badRequest().body("instance does not exist");
+        }
         boolean event = gameService.getGameEndEvent();
         if (event) {
             gameService.clearGameEndEvent();
         }
-        return event;
+        return ResponseEntity.ok(event);
     }
 
     @PostMapping("/leave")
-    public ResponseEntity<?> leaveGame(@RequestParam int playerIndex) {
+    public ResponseEntity<?> leaveGame(@RequestParam String roomId, @RequestParam int playerIndex) {
+        GameService gameService = roomService.getService(roomId);
+        if (gameService == null) {
+            return ResponseEntity.badRequest().body("instance does not exist");
+        }
         gameService.playerLeft(playerIndex);
+        roomService.removeRoom(roomId);
         return ResponseEntity.ok("Player left, game ended for everyone.");
     }
 
     @PostMapping("/restart")
-    public void restartGame() {
+    public ResponseEntity<?> restartGame(@RequestParam String roomId) {
+        GameService gameService = roomService.getService(roomId);
+        if (gameService == null) {
+            return ResponseEntity.badRequest().body("instance does not exist");
+        }
         gameService.restartGame();
+        return ResponseEntity.ok("game sucessfully deleted");
     }
 
-    @GetMapping("/handSize/{playerIndex}")
-    public int getHandSize(@PathVariable int playerIndex) {
-        return gameService.getPlayerHand(playerIndex).size();
+    @GetMapping("/handSize/{roomId}/{playerIndex}")
+    public ResponseEntity<?> getHandSize(@PathVariable String roomId, @PathVariable int playerIndex) {
+        GameService gameService = roomService.getService(roomId);
+        if (gameService == null) {
+            return ResponseEntity.badRequest().body("instance does not exist");
+        }
+        return ResponseEntity.ok(gameService.getPlayerHand(playerIndex).size());
     }
 }
