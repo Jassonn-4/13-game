@@ -16,6 +16,7 @@ This project allows three people to connect, play in real-time, and compete unti
 
 ##  Features
 
+- Multi-room lobby system with access control for up to three players per room
 - Real-time multiplayer gameplay via WebSocket
 - Automatic turn order handling for 3 players
 - Card validation (only legal plays are allowed)
