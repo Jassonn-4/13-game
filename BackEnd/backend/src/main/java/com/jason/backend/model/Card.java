@@ -11,7 +11,7 @@ public class Card implements Comparable<Card> {
         this.rank = rank;
     }
 
-    public String getsuit() {
+    public String getSuit() {
         return suit;
     }
 
@@ -19,9 +19,22 @@ public class Card implements Comparable<Card> {
         return rank;
     }
 
+    private int suitValue(Card c) {
+        return switch (c.getSuit()) {
+            case "Spades" -> 1;
+            case "Clubs" -> 2;
+            case "Diamonds" -> 3;
+            case "Hearts" -> 4;
+            default -> 0;
+        };
+    }
+
     @Override
     public int compareTo(Card other) {
+        if (this.rank != other.rank) {
         return Integer.compare(this.rank, other.rank);
+    }
+    return Integer.compare(suitValue(this), suitValue(other));
     }
 
     @Override

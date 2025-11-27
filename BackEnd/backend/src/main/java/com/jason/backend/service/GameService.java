@@ -108,7 +108,7 @@ public class GameService {
         PlayType currentType = PlayTypeClassifier.classify(currentPlay);
         
         if (newType == PlayType.INVALID) return false;
-        if (currentPlay.isEmpty()) return true;
+        if (currentPlay == null || currentPlay.isEmpty()) return true;
         if (newType != currentType) return false;
 
         List<Card> sortedNew = new ArrayList<>(newPlay);
@@ -118,19 +118,20 @@ public class GameService {
 
         switch (newType) {
             case SINGLE:
+                return sortedNew.get(0).compareTo(sortedCurrent.get(0)) > 0;
             case PAIR:
             case TRIPLE:
-                return sortedNew.get(0).getRank() > sortedCurrent.get(0).getRank();
+                return sortedNew.get(sortedNew.size() - 1).compareTo(
+                       sortedCurrent.get(sortedCurrent.size() - 1)) > 0;
             case FOUR_OF_A_KIND:
-                return sortedNew.get(0).getRank() > sortedCurrent.get(0).getRank();
+                return sortedNew.get(0).compareTo(sortedCurrent.get(0)) > 0;
             case FULL_HOUSE:
                 int newTripleRank = PlayTypeClassifier.getTripleRank(sortedNew);
                 int currentTripleRank = PlayTypeClassifier.getTripleRank(sortedCurrent);
                 return newTripleRank > currentTripleRank;
             case STRAIGHT:
-                int newHighest = sortedNew.get(sortedNew.size() - 1).getRank();
-                int currentHighest = sortedCurrent.get(sortedCurrent.size() - 1).getRank();
-                return newHighest > currentHighest;
+                return sortedNew.get(sortedNew.size() - 1).compareTo(
+                       sortedCurrent.get(sortedCurrent.size() - 1)) > 0;
             default:
                 return false;
         }

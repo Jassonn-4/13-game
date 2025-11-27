@@ -30,15 +30,13 @@ public class PlayTypeClassifier {
             return PlayType.FOUR_OF_A_KIND;
         }
 
-        if (size == 5) {
-            if (isFullHouse(cards)) {
-                return PlayType.FULL_HOUSE;
-            }
-
-            if (isStraight(cards)) {
-                return PlayType.STRAIGHT;
-            }
+        if (size == 5 && isFullHouse(cards)) {
+            return PlayType.FULL_HOUSE;
         }
+
+        if (size >= 3 && isStraight(cards)) {
+        return PlayType.STRAIGHT;
+    }
 
         return PlayType.INVALID;
     }
