@@ -130,6 +130,7 @@ public class GameService {
                 int currentTripleRank = PlayTypeClassifier.getTripleRank(sortedCurrent);
                 return newTripleRank > currentTripleRank;
             case STRAIGHT:
+                if (sortedNew.size() != sortedCurrent.size()) return false;
                 return sortedNew.get(sortedNew.size() - 1).compareTo(
                        sortedCurrent.get(sortedCurrent.size() - 1)) > 0;
             default:
